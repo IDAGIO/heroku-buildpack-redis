@@ -20,10 +20,13 @@ mktmpdir() {
 
 BUILD_DIR=$1
 CACHE_DIR=$2
-VERSION="3.0.4"
+ENV_DIR=$3
+VERSION="4.0.9"
 REDIS_BUILD="$(mktmpdir redis)"
 INSTALL_DIR="$BUILD_DIR/.heroku/vendor/redis"
 PROFILE_PATH="$BUILD_DIR/.profile.d/redis.sh"
+
+MAX_MEMORY=$(cat $ENV_DIR/LOCAL_REDIS_MAX_MEMORY)
 
 mkdir -p $INSTALL_DIR
 mkdir -p $(dirname $PROFILE_PATH)
@@ -44,6 +47,9 @@ else
 fi
 
 set-env PATH '/app/.heroku/vendor/redis/bin:$PATH'
+cat >>$PROFILE_PATH <<EOF
+redis-server --bind 127.0.0.1 --save "" --maxmemory $MAX_MEMORY --maxmemory-policy allkeys-lru --daemonize yes
+EOF
 
 echo "Done" | indent
 
