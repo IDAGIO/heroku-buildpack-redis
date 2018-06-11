@@ -38,6 +38,33 @@ if [ ! -d $CACHE_DIR/redis_$VERSION ]; then
 	curl -OL "http://download.redis.io/releases/redis-$VERSION.tar.gz"
 	tar zxvf "redis-$VERSION.tar.gz"
 	cd "redis-$VERSION"
+
+  patch -p1 <<EOP
+diff --git a/src/server.c b/src/server.c
+index d702823..1884a57 100644
+--- a/src/server.c
++++ b/src/server.c
+@@ -3511,6 +3511,10 @@ static void sigShutdownHandler(int sig) {
+     server.shutdown_asap = 1;
+ }
+
++static void sigIgnoreHandler(int sig) {
++  serverLogFromHandler(LL_WARNING, "*** Signal IGNORED ***");
++}
++
+ void setupSignalHandlers(void) {
+     struct sigaction act;
+
+@@ -3518,7 +3522,7 @@ void setupSignalHandlers(void) {
+      * Otherwise, sa_handler is used. */
+     sigemptyset(&act.sa_mask);
+     act.sa_flags = 0;
+-    act.sa_handler = sigShutdownHandler;
++    act.sa_handler = sigIgnoreHandler;
+     sigaction(SIGTERM, &act, NULL);
+     sigaction(SIGINT, &act, NULL);
+EOP
+
 	make
 	make PREFIX=$CACHE_DIR/redis_$VERSION/ install
 	cp -r $CACHE_DIR/redis_$VERSION/* $INSTALL_DIR/
